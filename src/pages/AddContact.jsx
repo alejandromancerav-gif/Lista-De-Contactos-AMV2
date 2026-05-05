@@ -12,7 +12,7 @@ export const AddContact = () => {
     email: "",
     phone: "",
     address: "",
-    avatar: ""  // Sin avatar, le asignaremos uno aleatorio
+    avatar: "" // Sin avatar, le asignaremos uno aleatorio
   });
 
   const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
@@ -24,10 +24,20 @@ export const AddContact = () => {
       return;
     }
 
-    // Si no se proporciona un avatar, asignamos uno aleatorio
-    if (!form.avatar) {
-      form.avatar = `https://picsum.photos/200?random=${Math.floor(Math.random() * 1000)}`;  // URL aleatorio
+    // Generar un avatar aleatorio si está vacío
+    let finalAvatar = form.avatar;
+    if (!finalAvatar) {
+      finalAvatar = `https://picsum.photos/200?random=${Math.floor(Math.random() * 1000)}`;
     }
+
+    // Preparamos los datos con el formato que acepta la API de 4Geeks
+    const contactData = {
+      name: form.name, 
+      email: form.email,
+      phone: form.phone,
+      address: form.address,
+      avatar: finalAvatar
+    };
 
     try {
       const res = await fetch(
@@ -35,16 +45,20 @@ export const AddContact = () => {
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(form)
+          body: JSON.stringify(contactData)
         }
       );
-      if (!res.ok) throw new Error("No se pudo agregar el contacto");
+      
+      if (!res.ok) {
+        throw new Error("No se pudo agregar el contacto. Verifica si la agenda existe.");
+      }
+      
       const newContact = await res.json();
       dispatch({ type: "add_contact", payload: newContact });
-      navigate("/contacts");
+      navigate("/contacts"); 
     } catch (err) {
       console.error(err);
-      alert("Error al agregar contacto");
+      alert("Error al agregar contacto (404). Asegúrate de que la agenda 'AlejandroMV' esté creada primero.");
     }
   };
 
