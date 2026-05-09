@@ -2,6 +2,7 @@
 import { useEffect } from "react";
 import { Link } from "react-router-dom";
 import useGlobalReducer from "../hooks/useGlobalReducer";
+import { ContactCard } from "../components/ContactCard";
 
 export const Contact = () => {
   const { store, dispatch } = useGlobalReducer();
@@ -28,18 +29,6 @@ export const Contact = () => {
     fetchContacts();
   }, [dispatch]);
 
-  const handleDelete = async (id) => {
-    try {
-      const res = await fetch(
-        `https://playground.4geeks.com/contact/agendas/AlejandroMV/contacts/${id}`,
-        { method: "DELETE" }
-      );
-      if (!res.ok) throw new Error("Error al eliminar el contacto");
-      dispatch({ type: "delete_contact", payload: id });
-    } catch (err) {
-      console.error("Error al eliminar el contacto:", err);
-    }
-  };
 
   if (!Array.isArray(store.contacts)) return null;
 
@@ -57,42 +46,17 @@ export const Contact = () => {
 
   return (
     <div className="container mt-5">
-      <h2>Contacts</h2>
+      <div className="d-flex justify-content-between align-items-center mb-4">
+        <h2>Contacts</h2>
+        <Link to="/add-contact" className="btn btn-success">
+          Add New Contact
+        </Link>
+      </div>
+
       {store.contacts.map((c) => (
-        <div
-          key={c.id}
-          className="card mb-2 p-2 d-flex flex-row align-items-center position-relative contact-card"
-        >
-          {/* Si no hay avatar, muestra un avatar por defecto */}
-          <img
-            src={c.avatar || "https://via.placeholder.com/50"}
-            alt=""
-            className="me-3 rounded-circle"
-            width="50"
-          />
-          <div>
-            <h5>{c.name}</h5>
-            <p className="mb-0">
-              <i className="fa fa-envelope me-2"></i>
-              {c.email}
-            </p>
-            <p className="mb-0">
-              <i className="fa fa-phone me-2"></i>
-              {c.phone}
-            </p>
-            <p className="mb-0">
-              <i className="fa fa-map-marker-alt me-2"></i>
-              {c.address}
-            </p>
-          </div>
-          <button
-            onClick={() => handleDelete(c.id)}
-            className="btn btn-danger delete-btn"
-          >
-            ×
-          </button>
-        </div>
+        <ContactCard key={c.id} contact={c} dispatch={dispatch} />
       ))}
+
       <Link to="/" className="btn btn-secondary mt-3">
         Back to Home
       </Link>

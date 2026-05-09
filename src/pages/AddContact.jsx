@@ -1,139 +1,100 @@
-// pages/AddContact.jsx
-import { useState } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { useNavigate, Link, useParams } from "react-router-dom";
 import useGlobalReducer from "../hooks/useGlobalReducer";
 
 export const AddContact = () => {
-  const { dispatch } = useGlobalReducer();
+  const { store, dispatch } = useGlobalReducer();
   const navigate = useNavigate();
+  const { id } = useParams(); 
 
   const [form, setForm] = useState({
     name: "",
     email: "",
     phone: "",
     address: "",
-    avatar: "" // Sin avatar, le asignaremos uno aleatorio
+    avatar: ""
   });
+
+  // Efecto para cargar datos en caso de edición
+  useEffect(() => {
+    if (id && store.contacts.length > 0) {
+      const contactToEdit = store.contacts.find(c => c.id === parseInt(id));
+      if (contactToEdit) {
+        setForm({
+          name: contactToEdit.name || "",
+          email: contactToEdit.email || "",
+          phone: contactToEdit.phone || "",
+          address: contactToEdit.address || "",
+          avatar: contactToEdit.avatar || ""
+        });
+      }
+    }
+  }, [id, store.contacts]);
 
   const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!form.name || !form.email || !form.phone) {
-      alert("Completa los campos requeridos: Nombre, Email y Teléfono");
-      return;
-    }
-
-    // Generar un avatar aleatorio si está vacío
-    let finalAvatar = form.avatar;
-    if (!finalAvatar) {
-      finalAvatar = `https://picsum.photos/200?random=${Math.floor(Math.random() * 1000)}`;
-    }
-
-    // Preparamos los datos con el formato que acepta la API de 4Geeks
-    const contactData = {
-      name: form.name, 
-      email: form.email,
-      phone: form.phone,
-      address: form.address,
-      avatar: finalAvatar
-    };
+    
+    // URL Unificada a AlejandroMV para evitar errores de conexión
+    const url = id 
+      ? `https://playground.4geeks.com/contact/agendas/AlejandroMV/contacts/${id}`
+      : "https://playground.4geeks.com/contact/agendas/AlejandroMV/contacts";
+    
+    const method = id ? "PUT" : "POST";
 
     try {
-      const res = await fetch(
-        "https://playground.4geeks.com/contact/agendas/AlejandroMV/contacts",
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(contactData)
-        }
-      );
+      const res = await fetch(url, {
+        method: method,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(form)
+      });
       
-      if (!res.ok) {
-        throw new Error("No se pudo agregar el contacto. Verifica si la agenda existe.");
+      if (!res.ok) throw new Error("Error en la operación");
+      
+      const data = await res.json();
+      
+      if (id) {
+        dispatch({ type: "update_contact", payload: data });
+      } else {
+        dispatch({ type: "add_contact", payload: data });
       }
       
-      const newContact = await res.json();
-      dispatch({ type: "add_contact", payload: newContact });
+      // Redirigir a la lista de contactos
       navigate("/contacts"); 
     } catch (err) {
       console.error(err);
-      alert("Error al agregar contacto (404). Asegúrate de que la agenda 'AlejandroMV' esté creada primero.");
+      alert("Error al procesar el contacto. Verifica la conexión.");
     }
   };
 
   return (
     <div className="container mt-5">
-      <h2>Add New Contact</h2>
-      <form onSubmit={handleSubmit}>
+      <h2 className="mb-4">{id ? "Edit Contact" : "Add New Contact"}</h2>
+      <form onSubmit={handleSubmit} className="card p-4 shadow-sm">
         <div className="mb-3">
-          <label>Full Name</label>
-          <input
-            type="text"
-            name="name"
-            className="form-control"
-            value={form.name}
-            onChange={handleChange}
-            required
-          />
+          <label className="form-label">Full Name</label>
+          <input type="text" name="name" className="form-control" value={form.name} onChange={handleChange} placeholder="Enter Name" required />
         </div>
-
         <div className="mb-3">
-          <label>Email</label>
-          <input
-            type="email"
-            name="email"
-            className="form-control"
-            value={form.email}
-            onChange={handleChange}
-            required
-          />
+          <label className="form-label">Email</label>
+          <input type="email" name="email" className="form-control" value={form.email} onChange={handleChange} placeholder="Enter Email" required />
         </div>
-
         <div className="mb-3">
-          <label>Phone</label>
-          <input
-            type="text"
-            name="phone"
-            className="form-control"
-            value={form.phone}
-            onChange={handleChange}
-            required
-          />
+          <label className="form-label">Phone</label>
+          <input type="text" name="phone" className="form-control" value={form.phone} onChange={handleChange} placeholder="Enter Phone" required />
         </div>
-
         <div className="mb-3">
-          <label>Address</label>
-          <input
-            type="text"
-            name="address"
-            className="form-control"
-            value={form.address}
-            onChange={handleChange}
-          />
+          <label className="form-label">Address</label>
+          <input type="text" name="address" className="form-control" value={form.address} onChange={handleChange} placeholder="Enter Address" />
         </div>
-
-        <div className="mb-3">
-          <label>Avatar URL (Optional)</label>
-          <input
-            type="text"
-            name="avatar"
-            className="form-control"
-            value={form.avatar}
-            onChange={handleChange}
-            placeholder="Leave blank for random avatar"
-          />
+        <div className="d-flex gap-2 mt-3">
+            <button type="submit" className="btn btn-primary w-100">
+            {id ? "Update Contact" : "Save Contact"}
+            </button>
+            <Link to="/contacts" className="btn btn-secondary w-100 text-center">Cancel</Link>
         </div>
-
-        <button type="submit" className="btn btn-primary">
-          Save Contact
-        </button>
       </form>
-
-      {/* Botón para volver a la página principal */}
-      <Link to="/" className="btn btn-secondary mt-3">
-        Back to Home
-      </Link>
     </div>
   );
 };

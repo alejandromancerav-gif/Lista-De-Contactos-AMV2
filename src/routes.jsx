@@ -11,6 +11,7 @@ export const AppRoutes = () => (
         <Route path="/" element={<Home />} />
         <Route path="/contacts" element={<Contact />} />
         <Route path="/add-contact" element={<AddContact />} />
+        <Route path="/edit/:id" element={<AddContact />} />  
       </Routes>
     </BrowserRouter>
   </StoreProvider>
